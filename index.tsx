@@ -548,3 +548,218 @@ const App = () => {
             </button>
             
             <div className="mt-6 text-center">
+                <p className="text-xs text-gray-400">
+                    sadece Google hesabınla oyuna giriş yapabilirsin.
+                </p>
+            </div>
+        </div>
+        
+        <Footer onClick={handleLogout} />
+      </div>
+    );
+  }
+
+  if (gameState === GameState.LOBBY) {
+    const gamesLeft = Math.max(0, 2 - (user?.stats.dailyGamesPlayed || 0));
+    const canPlay = gamesLeft > 0;
+
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-y-auto">
+        <ModernBackground />
+        
+        <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-xl w-full max-w-md relative z-10 text-center border border-white">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-1">Hoş geldin, {user?.name}</h2>
+            <p className="text-gray-500 text-sm">60 saniyede maksimum doğru cevabı hedefle!</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-8">
+            <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100">
+                <div className="text-xs text-gray-400 font-bold mb-1">Kredi</div>
+                <div className={`text-2xl font-black ${gamesLeft === 0 ? 'text-red-500' : 'text-blue-600'}`}>{gamesLeft}/2</div>
+            </div>
+            <div className="bg-green-50 p-3 rounded-2xl border border-green-100">
+                <div className="text-xs text-gray-400 font-bold mb-1">Günlük</div>
+                <div className="text-2xl font-black text-green-600">{user?.stats.dailyScore || 0}</div>
+            </div>
+             <div className="bg-purple-50 p-3 rounded-2xl border border-purple-100">
+                <div className="text-xs text-gray-400 font-bold mb-1">Toplam</div>
+                <div className="text-2xl font-black text-purple-600">{user?.stats.cumulativeScore || 0}</div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleStartGame}
+            disabled={!canPlay}
+            className={`
+              w-full py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-6
+              transition-all duration-200 transform hover:-translate-y-1
+              ${canPlay 
+                ? 'bg-gradient-to-r from-[#E30A17] to-red-600 text-white hover:shadow-red-200' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
+            `}
+          >
+            {canPlay ? (
+                <>
+                 <GamepadIcon />
+                 Oyuna Başla
+                </>
+            ) : (
+                'Bugünkü hakkın doldu.'
+            )}
+          </button>
+          
+          <HighScoreList scores={highScores} currentScore={user?.stats.cumulativeScore} />
+        </div>
+        <Footer onClick={handleLogout} />
+      </div>
+    );
+  }
+
+  if (gameState === GameState.PLAYING) {
+    const timerColor = timeLeft > 30 ? 'text-green-500' : timeLeft > 10 ? 'text-orange-500' : 'text-red-500 animate-pulse';
+    
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-y-auto">
+        <ModernBackground />
+        
+        <div className="w-full max-w-lg grid grid-cols-3 items-center mb-8 relative z-20 bg-white/50 backdrop-blur-sm p-3 rounded-2xl border border-white/50 shadow-sm">
+            <div className="flex items-center gap-2">
+                <UserIcon />
+                <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-gray-800 text-sm truncate">{user?.name}</span>
+                </div>
+            </div>
+
+            <div className="flex justify-center">
+                 <div className={`text-4xl font-black ${timerColor} tabular-nums tracking-tighter drop-shadow-sm`}>
+                    {timeLeft}
+                 </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">PUAN</span>
+                <span className="text-2xl font-black text-gray-800 leading-none tabular-nums">{score}</span>
+                <span className="text-xs font-bold text-gray-400 tabular-nums">
+                    ({score / 100}/{totalAttempts})
+                </span>
+            </div>
+        </div>
+
+        <div className="w-full flex flex-col items-center justify-center max-w-lg relative z-10">
+            {question && (
+                <>
+                    <Tabela district={question.district} mapShapeIndex={question.mapShapeIndex} />
+
+                    <div className="mt-8 mb-4 text-center">
+                        <h3 className="text-gray-500 font-bold text-sm tracking-widest uppercase">Hangi İlimize Bağlıdır?</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 w-full">
+                        {question.options.map((opt, idx) => {
+                            let btnClass = "bg-white text-gray-700 hover:bg-gray-50 border-gray-200";
+                            
+                            if (selectedAnswer === opt) {
+                                if (opt === question.province) {
+                                    btnClass = "bg-green-500 text-white border-green-600 shadow-green-200 ring-2 ring-green-300";
+                                } else {
+                                    btnClass = "bg-red-500 text-white border-red-600 shadow-red-200 ring-2 ring-red-300 shake";
+                                }
+                            } else if (selectedAnswer && opt === question.province) {
+                                btnClass = "bg-green-100 text-green-700 border-green-300 ring-2 ring-green-200";
+                            }
+
+                            return (
+                                <button
+                                    key={idx}
+                                    onClick={() => handleAnswer(opt)}
+                                    disabled={selectedAnswer !== null}
+                                    className={`
+                                        w-full py-4 rounded-xl font-bold text-lg shadow-sm border-b-4 transition-all duration-100
+                                        active:border-b-0 active:translate-y-1
+                                        ${btnClass}
+                                    `}
+                                >
+                                    {opt}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    
+                    <button 
+                        onClick={handleSkip}
+                        className="mt-1.5 mb-4 text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors flex items-center gap-1"
+                    >
+                        &gt; bu soruyu pas geç
+                    </button>
+                </>
+            )}
+        </div>
+        
+        <Footer onClick={handleLogout} />
+      </div>
+    );
+  }
+
+  if (gameState === GameState.SESSION_OVER) {
+    // Calculate display score from ref or state, ensuring it's current
+    // Since we're in SESSION_OVER, score state should be updated, but let's use the ref for safety in calculation logic if needed, 
+    // though for display `score` state is usually fine as the render happens after state update.
+    
+    let message = "Canın Sağolsun";
+    let icon = "👏";
+    if (score > 1500) { message = "Efsane!"; icon = "🏆"; }
+    else if (score >= 500) { message = "Harika!"; icon = "🌟"; }
+
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-y-auto">
+        <ModernBackground />
+        
+        <div className="bg-white p-8 rounded-3xl shadow-2xl text-center w-full max-w-sm relative z-10 animate-scale-in border border-gray-100">
+            <div className="text-6xl mb-4 animate-bounce-short">{icon}</div>
+            <h2 className="text-3xl font-black text-gray-800 mb-1">{message}</h2>
+            <p className="text-gray-500 mb-8">Oyun tamamlandı</p>
+
+            <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100">
+                <div className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">BU OYUN SKORUN</div>
+                <div className="text-5xl font-black text-blue-600 tracking-tighter">{score}</div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-8">
+                 <div className="bg-gray-50 p-3 rounded-xl">
+                    <div className="text-xs text-gray-400">Doğru</div>
+                    <div className="font-bold text-green-600 text-xl">{score / 100}</div>
+                 </div>
+                 <div className="bg-gray-50 p-3 rounded-xl">
+                    <div className="text-xs text-gray-400">Günlük Toplam</div>
+                    <div className="font-bold text-gray-700 text-xl">{user?.stats.dailyScore || 0}</div>
+                 </div>
+            </div>
+
+            <button 
+                onClick={() => setGameState(GameState.LOBBY)}
+                className="w-full bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-gray-700 transition-all hover:-translate-y-1 mb-3"
+            >
+                DEVAM ET
+            </button>
+
+            <button 
+                onClick={handleLogout}
+                className="w-full bg-white text-gray-500 font-bold py-3 rounded-xl border border-gray-200 hover:bg-gray-50 hover:text-gray-700 transition-all"
+            >
+                Ana Sayfaya Dön
+            </button>
+        </div>
+        <Footer onClick={handleLogout} />
+      </div>
+    );
+  }
+
+  return null;
+};
+
+const container = document.getElementById('root');
+if (container) {
+  const root = createRoot(container);
+  root.render(<App />);
+}
