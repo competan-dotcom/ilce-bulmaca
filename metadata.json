@@ -1,0 +1,5 @@
+{
+  "name": "ilcebulmaca",
+  "description": "A geography quiz game where users guess the Turkish province based on a district name and its location on a map.",
+  "requestFramePermissions": []
+}
