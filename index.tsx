@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { GoogleGenAI } from "@google/genai";
+// import { GoogleGenAI } from "@google/genai"; 
 import { 
   Question, 
   GameState, 
   User, 
-  UserStats, 
-  GameResult, 
+  // UserStats, 
+  // GameResult, 
   HighScore 
 } from './types';
 import { APP_TITLE, DISTRICT_DATABASE, MAX_SCORE_KEY, GOOGLE_CLIENT_ID } from './constants';
@@ -130,7 +130,6 @@ const Footer = ({ onClick }: { onClick?: () => void }) => (
 
 // Dynamic Jagged Landmass Generator
 const generateJaggedPath = (seed: number) => {
-    // Deterministic random using sine based on index (seed)
     const random = (x: number) => {
         const n = Math.sin(seed + x) * 10000;
         return n - Math.floor(n);
@@ -145,7 +144,6 @@ const generateJaggedPath = (seed: number) => {
 
     for (let i = 0; i < numPoints; i++) {
         const angle = (i / numPoints) * Math.PI * 2;
-        // Add noise to radius
         const rVar = 0.7 + random(i) * 0.6; // 0.7 - 1.3 variation
         const px = centerX + Math.cos(angle) * radiusX * rVar;
         const py = centerY + Math.sin(angle) * radiusY * rVar;
@@ -182,10 +180,10 @@ const Tabela = ({ district, mapShapeIndex }: { district: string, mapShapeIndex: 
           {district}
         </h2>
         
-        {/* Divider Line - Karayolları Style */}
+        {/* Divider Line */}
         <div className="w-3/4 h-1 bg-white mt-1 mb-1 rounded-full shadow-sm z-20"></div>
 
-        {/* Abstract Map Shape (Visual Flourish) - Centered below line */}
+        {/* Abstract Map Shape */}
         <div className="flex items-center justify-center opacity-20 z-0 pointer-events-none mt-1">
              <svg width="140" height="50" viewBox="0 0 200 100">
                 <path d={pathData} fill="white" stroke="none" />
@@ -193,10 +191,8 @@ const Tabela = ({ district, mapShapeIndex }: { district: string, mapShapeIndex: 
         </div>
       </div>
 
-      {/* Pole - COLOR LIGHTENED */}
+      {/* Pole */}
       <div className="w-4 h-12 bg-gray-400 mx-auto -mt-1 relative z-0 shadow-inner rounded-b-full"></div>
-
-      {/* Sketchy Shadow */}
       <div className="w-24 h-4 bg-black/10 mx-auto rounded-[100%] blur-sm -mt-2"></div>
     </div>
   );
@@ -252,7 +248,8 @@ const App = () => {
   const [user, setUser] = useState<User | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
   const [timeLeft, setTimeLeft] = useState(60);
-  const [score, setScore] = useState(0); // This session score
+  const [score, setScore] = useState(0);
+  const scoreRef = useRef(0); // FIX: Use ref for sync score access
   const [highScores, setHighScores] = useState<HighScore[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [correctAnswer, setCorrectAnswer] = useState<string | null>(null);
@@ -277,7 +274,6 @@ const App = () => {
         callback: async (tokenResponse: any) => {
           if (tokenResponse && tokenResponse.access_token) {
              try {
-                 // Fetch user info using the access token
                  const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
                  });
@@ -303,13 +299,24 @@ const App = () => {
 
                  if (storedUserStr) {
                     const parsed = JSON.parse(storedUserStr);
+                    // Reset logic happens in useEffect below, but handle it here for safety too
+                    const today = new Date().toISOString().split('T')[0];
+                    let currentStats = { ...defaultStats, ...parsed.stats };
+
+                    if (currentStats.lastPlayedDate !== today) {
+                       currentStats.dailyGamesPlayed = 0;
+                       currentStats.dailyScore = 0;
+                       currentStats.lastPlayedDate = today;
+                    }
+
                     appUser = {
                         ...parsed,
-                        // Update name/email from Google fresh data
                         name: profile.given_name || profile.name,
                         email: profile.email,
-                        stats: { ...defaultStats, ...parsed.stats }
+                        stats: currentStats
                     };
+                    // Save reset immediately
+                    localStorage.setItem(`ilce_bulmaca_user_${profile.email}`, JSON.stringify(appUser));
                  } else {
                     appUser = {
                         email: profile.email,
@@ -339,11 +346,12 @@ const App = () => {
     if (gameState === GameState.PLAYING) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
-          if (prev <= 6 && prev > 0) { // Tick sound for last 5 seconds
+          if (prev <= 6 && prev > 0) { 
              soundManager.playTick();
           }
           if (prev <= 1) {
-            handleSessionOver();
+            // Don't call handleSessionOver here directly to avoid stale closure issues with user state
+            // Just set to 0, the effect below will trigger
             return 0;
           }
           return prev - 1;
@@ -355,7 +363,14 @@ const App = () => {
     };
   }, [gameState]);
 
-  // Check Daily Reset
+  // Trigger Game Over when time hits 0
+  useEffect(() => {
+      if (timeLeft === 0 && gameState === GameState.PLAYING) {
+          handleSessionOver();
+      }
+  }, [timeLeft, gameState]);
+
+  // Check Daily Reset on load/updates
   useEffect(() => {
     if (user) {
         const today = new Date().toISOString().split('T')[0];
@@ -378,13 +393,15 @@ const App = () => {
   const handleSessionOver = () => {
     setGameState(GameState.SESSION_OVER);
     if (user) {
-      // Update User Stats safely (handle undefineds)
+      // FIX: Use ref value for calculation to ensure it's current
+      const finalSessionScore = scoreRef.current; 
+      
       const today = new Date().toISOString().split('T')[0];
       const currentDaily = user.stats.dailyScore || 0;
       const currentCumulative = user.stats.cumulativeScore || 0;
       
-      const newDailyScore = currentDaily + score;
-      const newCumulativeScore = currentCumulative + score;
+      const newDailyScore = currentDaily + finalSessionScore;
+      const newCumulativeScore = currentCumulative + finalSessionScore;
       
       const updatedUser = {
         ...user,
@@ -397,10 +414,8 @@ const App = () => {
         }
       };
       setUser(updatedUser);
-      // Save persistent user stats (Keyed by email for real users)
       localStorage.setItem(`ilce_bulmaca_user_${user.email}`, JSON.stringify(updatedUser));
 
-      // Update Leaderboard (CUMULATIVE High Scores)
       const newEntry: HighScore = {
         score: newCumulativeScore, 
         date: Date.now(),
@@ -409,7 +424,6 @@ const App = () => {
       };
 
       setHighScores(prev => {
-        // Remove previous entry for this user to update their score
         const filtered = prev.filter(p => p.name !== user.name);
         const newScores = [...filtered, newEntry].sort((a, b) => b.score - a.score).slice(0, 10);
         localStorage.setItem(MAX_SCORE_KEY, JSON.stringify(newScores));
@@ -422,7 +436,6 @@ const App = () => {
     const randomIdx = Math.floor(Math.random() * DISTRICT_DATABASE.length);
     const item = DISTRICT_DATABASE[randomIdx];
     
-    // Generate Options
     const options = new Set<string>();
     options.add(item.province);
     while (options.size < 4) {
@@ -444,9 +457,11 @@ const App = () => {
 
   const handleStartGame = () => {
     if (!user) return;
+    // Check credit based on latest user state
     if ((user.stats.dailyGamesPlayed || 0) >= 2) return;
 
     setScore(0);
+    scoreRef.current = 0; // Reset ref
     setTimeLeft(60);
     setTotalAttempts(0);
     generateQuestion();
@@ -454,7 +469,7 @@ const App = () => {
   };
 
   const handleAnswer = (answer: string) => {
-    if (selectedAnswer) return; // Block multiple clicks
+    if (selectedAnswer) return; 
     
     setTotalAttempts(prev => prev + 1);
     soundManager.playClick();
@@ -462,16 +477,17 @@ const App = () => {
 
     if (question && answer === question.province) {
       soundManager.playCorrect();
+      // Update both state and ref
       setScore(s => s + 100);
-      setCorrectAnswer(answer); // Show Green
-      // Wait before next question
+      scoreRef.current += 100; 
+
+      setCorrectAnswer(answer); 
       setTimeout(() => {
           generateQuestion();
       }, 600);
     } else {
       soundManager.playWrong();
-      setCorrectAnswer(question!.province); // Show Correct One
-      // Wait longer to see the mistake
+      setCorrectAnswer(question!.province); 
       setTimeout(() => {
           generateQuestion();
       }, 1200);
@@ -488,13 +504,11 @@ const App = () => {
     if (tokenClient) {
         tokenClient.requestAccessToken();
     } else {
-        alert("Google servisi yüklenemedi veya Client ID eksik. Lütfen constants.ts dosyasını kontrol et.");
+        alert("Google servisi yüklenemedi. Sayfayı yenilemeyi dene.");
     }
   };
 
   const handleLogout = () => {
-    // Revoke token logic could go here if we stored the access token, 
-    // but for simple auth we just clear local state
     setUser(null);
     setGameState(GameState.START);
   };
@@ -506,7 +520,6 @@ const App = () => {
       <div className="min-h-screen flex flex-col items-center justify-center relative overflow-y-auto font-sans text-gray-800">
         <ModernBackground />
         
-        {/* Animated Red Pin - Professional SVG */}
         <div className="mb-6 mt-10 animate-bounce relative z-10">
            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-24 h-24 text-[#E30A17] drop-shadow-2xl">
              <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
@@ -514,7 +527,6 @@ const App = () => {
            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-2 bg-black/20 rounded-[100%] blur-sm animate-pulse"></div>
         </div>
 
-        {/* Title */}
         <h1 className="text-5xl text-gray-800 mb-2 relative z-10 tracking-tight lowercase" style={{ fontFamily: "'Righteous', cursive" }}>
             {APP_TITLE}
         </h1>
@@ -522,7 +534,6 @@ const App = () => {
             81 il, 922 ilçe, tek şampiyon
         </p>
 
-        {/* Login Card */}
         <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm relative z-10 border border-gray-100">
             <div className="mb-8 text-center">
                 <h2 className="text-xl font-bold text-gray-800 lowercase border-b-2 border-red-500 inline-block pb-1">oyuncu girişi</h2>
@@ -537,221 +548,3 @@ const App = () => {
             </button>
             
             <div className="mt-6 text-center">
-                <p className="text-xs text-gray-400">
-                    sadece Google hesabınla oyuna giriş yapabilirsin.
-                </p>
-            </div>
-        </div>
-        
-        <Footer onClick={handleLogout} />
-      </div>
-    );
-  }
-
-  if (gameState === GameState.LOBBY) {
-    const gamesLeft = 2 - (user?.stats.dailyGamesPlayed || 0);
-    const canPlay = gamesLeft > 0;
-
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-y-auto">
-        <ModernBackground />
-        
-        <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-xl w-full max-w-md relative z-10 text-center border border-white">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-1">Hoş geldin, {user?.name}</h2>
-            <p className="text-gray-500 text-sm">60 saniyede maksimum doğru cevabı hedefle!</p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 mb-8">
-            <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100">
-                <div className="text-xs text-gray-400 font-bold mb-1">Kredi</div>
-                <div className={`text-2xl font-black ${gamesLeft === 0 ? 'text-red-500' : 'text-blue-600'}`}>{gamesLeft}/2</div>
-            </div>
-            <div className="bg-green-50 p-3 rounded-2xl border border-green-100">
-                <div className="text-xs text-gray-400 font-bold mb-1">Günlük</div>
-                <div className="text-2xl font-black text-green-600">{user?.stats.dailyScore || 0}</div>
-            </div>
-             <div className="bg-purple-50 p-3 rounded-2xl border border-purple-100">
-                <div className="text-xs text-gray-400 font-bold mb-1">Toplam</div>
-                <div className="text-2xl font-black text-purple-600">{user?.stats.cumulativeScore || 0}</div>
-            </div>
-          </div>
-
-          <button
-            onClick={handleStartGame}
-            disabled={!canPlay}
-            className={`
-              w-full py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-6
-              transition-all duration-200 transform hover:-translate-y-1
-              ${canPlay 
-                ? 'bg-gradient-to-r from-[#E30A17] to-red-600 text-white hover:shadow-red-200' 
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
-            `}
-          >
-            {canPlay ? (
-                <>
-                 <GamepadIcon />
-                 Oyuna Başla
-                </>
-            ) : (
-                'Bugünkü hakkın doldu.'
-            )}
-          </button>
-          
-          {/* HighScoreList now uses cumulative score for highlighting */}
-          <HighScoreList scores={highScores} currentScore={user?.stats.cumulativeScore} />
-        </div>
-        <Footer onClick={handleLogout} />
-      </div>
-    );
-  }
-
-  if (gameState === GameState.PLAYING) {
-    const timerColor = timeLeft > 30 ? 'text-green-500' : timeLeft > 10 ? 'text-orange-500' : 'text-red-500 animate-pulse';
-    
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-y-auto">
-        <ModernBackground />
-        
-        {/* Header - 3 Col Grid */}
-        <div className="w-full max-w-lg grid grid-cols-3 items-center mb-8 relative z-20 bg-white/50 backdrop-blur-sm p-3 rounded-2xl border border-white/50 shadow-sm">
-            {/* Left: User */}
-            <div className="flex items-center gap-2">
-                <UserIcon />
-                <div className="flex flex-col min-w-0">
-                    <span className="font-bold text-gray-800 text-sm truncate">{user?.name}</span>
-                </div>
-            </div>
-
-            {/* Center: Timer */}
-            <div className="flex justify-center">
-                 <div className={`text-4xl font-black ${timerColor} tabular-nums tracking-tighter drop-shadow-sm`}>
-                    {timeLeft}
-                 </div>
-            </div>
-
-            {/* Right: Score */}
-            <div className="flex items-center justify-end gap-2">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">PUAN</span>
-                <span className="text-2xl font-black text-gray-800 leading-none tabular-nums">{score}</span>
-                <span className="text-xs font-bold text-gray-400 tabular-nums">
-                    ({score / 100}/{totalAttempts})
-                </span>
-            </div>
-        </div>
-
-        {/* Game Area */}
-        <div className="w-full flex flex-col items-center justify-center max-w-lg relative z-10">
-            {question && (
-                <>
-                    <Tabela district={question.district} mapShapeIndex={question.mapShapeIndex} />
-
-                    <div className="mt-8 mb-4 text-center">
-                        <h3 className="text-gray-500 font-bold text-sm tracking-widest uppercase">Hangi İlimize Bağlıdır?</h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3 w-full">
-                        {question.options.map((opt, idx) => {
-                            let btnClass = "bg-white text-gray-700 hover:bg-gray-50 border-gray-200";
-                            
-                            if (selectedAnswer === opt) {
-                                if (opt === question.province) {
-                                    btnClass = "bg-green-500 text-white border-green-600 shadow-green-200 ring-2 ring-green-300";
-                                } else {
-                                    btnClass = "bg-red-500 text-white border-red-600 shadow-red-200 ring-2 ring-red-300 shake";
-                                }
-                            } else if (selectedAnswer && opt === question.province) {
-                                // Show correct answer if wrong one was picked
-                                btnClass = "bg-green-100 text-green-700 border-green-300 ring-2 ring-green-200";
-                            }
-
-                            return (
-                                <button
-                                    key={idx}
-                                    onClick={() => handleAnswer(opt)}
-                                    disabled={selectedAnswer !== null}
-                                    className={`
-                                        w-full py-4 rounded-xl font-bold text-lg shadow-sm border-b-4 transition-all duration-100
-                                        active:border-b-0 active:translate-y-1
-                                        ${btnClass}
-                                    `}
-                                >
-                                    {opt}
-                                </button>
-                            );
-                        })}
-                    </div>
-                    
-                    <button 
-                        onClick={handleSkip}
-                        className="mt-1.5 mb-4 text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors flex items-center gap-1"
-                    >
-                        &gt; bu soruyu pas geç
-                    </button>
-                </>
-            )}
-        </div>
-        
-        <Footer onClick={handleLogout} />
-      </div>
-    );
-  }
-
-  if (gameState === GameState.SESSION_OVER) {
-    let message = "Canın Sağolsun";
-    let icon = "👏";
-    if (score > 1500) { message = "Efsane!"; icon = "🏆"; }
-    else if (score >= 500) { message = "Harika!"; icon = "🌟"; }
-
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-y-auto">
-        <ModernBackground />
-        
-        <div className="bg-white p-8 rounded-3xl shadow-2xl text-center w-full max-w-sm relative z-10 animate-scale-in border border-gray-100">
-            <div className="text-6xl mb-4 animate-bounce-short">{icon}</div>
-            <h2 className="text-3xl font-black text-gray-800 mb-1">{message}</h2>
-            <p className="text-gray-500 mb-8">Oyun tamamlandı</p>
-
-            <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100">
-                <div className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">BU OYUN SKORUN</div>
-                <div className="text-5xl font-black text-blue-600 tracking-tighter">{score}</div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-8">
-                 <div className="bg-gray-50 p-3 rounded-xl">
-                    <div className="text-xs text-gray-400">Doğru</div>
-                    <div className="font-bold text-green-600 text-xl">{score / 100}</div>
-                 </div>
-                 <div className="bg-gray-50 p-3 rounded-xl">
-                    <div className="text-xs text-gray-400">Günlük Toplam</div>
-                    <div className="font-bold text-gray-700 text-xl">{user?.stats.dailyScore || 0}</div>
-                 </div>
-            </div>
-
-            <button 
-                onClick={() => setGameState(GameState.LOBBY)}
-                className="w-full bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-gray-700 transition-all hover:-translate-y-1 mb-3"
-            >
-                DEVAM ET
-            </button>
-
-            <button 
-                onClick={handleLogout}
-                className="w-full bg-white text-gray-500 font-bold py-3 rounded-xl border border-gray-200 hover:bg-gray-50 hover:text-gray-700 transition-all"
-            >
-                Ana Sayfaya Dön
-            </button>
-        </div>
-        <Footer onClick={handleLogout} />
-      </div>
-    );
-  }
-
-  return null;
-};
-
-const container = document.getElementById('root');
-if (container) {
-  const root = createRoot(container);
-  root.render(<App />);
-}
