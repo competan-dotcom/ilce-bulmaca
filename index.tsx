@@ -108,9 +108,9 @@ const ModernBackground = () => (
   </div>
 );
 
-// MODERN FOOTER: Ortalanmış, Fonksiyonel ve Şık
+// MODERN FOOTER: Ortalanmış, İçeriğe Yakınlaştırılmış
 const Footer = ({ onClick }: { onClick?: () => void }) => (
-  <div className="w-full py-6 flex justify-center items-center gap-6 relative z-50 mt-auto select-none">
+  <div className="w-full py-6 flex justify-center items-center gap-6 relative z-50 mt-10 select-none">
     
     {/* Sol Taraf: Ana Sayfa Butonu (Varsa gösterilir) */}
     {onClick && (
