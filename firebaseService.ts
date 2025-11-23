@@ -3,14 +3,14 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { User, HighScore } from './types';
 
-// Senin attığın config buraya geliyor:
+// Config artık ortam değişkenlerinden geliyor:
 const firebaseConfig = {
-  apiKey: "AIzaSyB-x27zLYxqTaMhkXD1ZSkMNSXCk2FKrdk",
-  authDomain: "ilce-bulmaca-db.firebaseapp.com",
-  projectId: "ilce-bulmaca-db",
-  storageBucket: "ilce-bulmaca-db.firebasestorage.app",
-  messagingSenderId: "29953545688",
-  appId: "1:29953545688:web:3d29df21ae2fde31c3cead"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Firebase'i başlat
