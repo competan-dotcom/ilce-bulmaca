@@ -3,9 +3,8 @@
 export const APP_TITLE = "il'çe bulmaca";
 export const MAX_SCORE_KEY = "ilce_bulmaca_max_score";
 
-// DIKKAT: Buraya Google Cloud Console'dan aldigin gercek Client ID'yi yapistirmalisin.
-// Eger bos birakirsan giris butonu calismaz veya hata verir.
-export const GOOGLE_CLIENT_ID = "729521165593-htqj46sdocusev00epv2dhjc0oce6ufu.apps.googleusercontent.com";
+// Client ID ortam değişkeninden çekiliyor.
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 // Raw CSV Data provided by user
 const RAW_DATA = `Adana,Aladağ
