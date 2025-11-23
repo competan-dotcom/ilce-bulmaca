@@ -96,22 +96,22 @@ const soundManager = {
 
 // --- Components ---
 
-// GÜNCELLENMİŞ ARKA PLAN: Daha temiz, gradientsel, ızgarasız.
+// GÜNCELLENMİŞ ARKA PLAN: Izgara yok, temiz ve modern geçişli renkler.
 const ModernBackground = () => (
   <div className="fixed inset-0 z-0 pointer-events-none bg-gray-50 overflow-hidden">
-    {/* Soft Gradient Mesh */}
+    {/* Hafif Gradient Geçiş */}
     <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-red-50 opacity-80"></div>
     
-    {/* Decorative Blurs - More subtle */}
+    {/* Dekoratif Bulanık Toplar - Daha yumuşak */}
     <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full bg-blue-100 opacity-40 blur-[120px]"></div>
     <div className="absolute bottom-[-20%] right-[-10%] w-[70vw] h-[70vw] rounded-full bg-red-100 opacity-40 blur-[120px]"></div>
   </div>
 );
 
-// GÜNCELLENMİŞ FOOTER: Sola yaslı Ana Sayfa, Sağa yaslı İmza, Siyah Renk, Sans Font.
+// GÜNCELLENMİŞ FOOTER: Sola yaslı 'Ana Sayfa', Sağa yaslı İmza, Siyah Renk.
 const Footer = ({ onClick }: { onClick?: () => void }) => (
-  <div className="w-full max-w-lg mx-auto mt-8 py-4 flex justify-between items-center relative z-50 text-black text-xs font-bold tracking-widest uppercase select-none">
-    {/* Sol Taraf: Ana Sayfa Butonu (Eğer onClick varsa) */}
+  <div className="w-full max-w-lg mx-auto mt-8 py-4 flex justify-between items-center relative z-50 text-black text-xs font-bold tracking-widest uppercase select-none px-4">
+    {/* Sol Taraf: Ana Sayfa Butonu (Tıklanabilirse göster) */}
     <div>
       {onClick ? (
         <button 
@@ -121,7 +121,7 @@ const Footer = ({ onClick }: { onClick?: () => void }) => (
           <span>←</span> ANA SAYFA
         </button>
       ) : (
-        /* onClick yoksa (Start ekranı) boş bırak veya başka bir şey koy */
+        /* Tıklama yoksa boşluk bırak ki hizalama bozulmasın */
         <span className="opacity-0">.</span>
       )}
     </div>
