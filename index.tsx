@@ -256,36 +256,60 @@ const App = () => {
     fetchScores();
   }, [gameState]); // Oyun durumu her değiştiğinde güncelle
 
-  // Initialize Google OAuth Client
+  
+  
+  
+// Initialize Google OAuth Client (Beklemeli Versiyon)
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.google) {
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-        callback: async (tokenResponse: any) => {
-          if (tokenResponse && tokenResponse.access_token) {
-             try {
-                 const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                   headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-                 });
-                 const profile = await res.json();
-                 
-                 // --- YENİ: Firebase'den Kullanıcıyı Getir/Oluştur ---
-                 const appUser = await getOrCreateUser(profile.email, profile.name || "İsimsiz Oyuncu");
-                 
-                 setUser(appUser);
-                 setGameState(GameState.LOBBY);
+    const initializeGoogle = () => {
+      // Google scripti ve accounts modülü yüklenmiş mi kontrol et
+      if (typeof window !== 'undefined' && window.google && window.google.accounts) {
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse && tokenResponse.access_token) {
+               try {
+                   const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                     headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                   });
+                   const profile = await res.json();
+                   
+                   // --- YENİ: Firebase'den Kullanıcıyı Getir/Oluştur ---
+                   const appUser = await getOrCreateUser(profile.email, profile.name || "İsimsiz Oyuncu");
+                   
+                   setUser(appUser);
+                   setGameState(GameState.LOBBY);
 
-             } catch (error) {
-                 console.error("Giriş hatası:", error);
-                 alert("Giriş yapılırken bir hata oluştu.");
-             }
-          }
-        },
-      });
-      setTokenClient(client);
+               } catch (error) {
+                   console.error("Giriş hatası:", error);
+                   alert("Giriş yapılırken bir hata oluştu.");
+               }
+            }
+          },
+        });
+        setTokenClient(client);
+        return true; // Başarıyla yüklendi
+      }
+      return false; // Henüz yüklenmedi
+    };
+
+    // İlk yüklemede kontrol et, yoksa gelene kadar zamanlayıcı kur
+    if (!initializeGoogle()) {
+      const intervalId = setInterval(() => {
+        if (initializeGoogle()) {
+          clearInterval(intervalId); // Yüklendiğinde zamanlayıcıyı durdur
+        }
+      }, 100); // 100ms'de bir kontrol et
+      return () => clearInterval(intervalId);
     }
   }, []);
+
+
+
+
+
+  
 
   // Timer Logic
   useEffect(() => {
