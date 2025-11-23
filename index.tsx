@@ -133,5 +133,6 @@ const Footer = ({ onClick }: { onClick?: () => void }) => (
   </div>
 );
 
+
 const generateJaggedPath = (seed: number) => {
     const random = (x: number
