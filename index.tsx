@@ -581,7 +581,7 @@ const App = () => {
                  Oyuna Başla
                 </>
             ) : (
-                ''İki' hakkın doldu. Yarın yine gel!'
+                '[İki] hakkın doldu. Yarın yine gel!'
             )}
           </button>
           
