@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-// import { GoogleGenAI } from "@google/genai"; 
 import { 
   Question, 
   GameState, 
@@ -192,7 +191,6 @@ const HighScoreList = ({ scores, currentScore }: { scores: HighScore[], currentS
             <div 
               key={index} 
               className={`flex items-center justify-between p-2 rounded-lg text-sm ${
-                // İsim kontrolü ile highlight yapalım
                 false ? 'bg-blue-50 border border-blue-100' : 'bg-gray-50'
               }`}
             >
@@ -247,7 +245,7 @@ const App = () => {
         }
     };
     fetchScores();
-  }, [gameState]); // Oyun durumu her değiştiğinde (örn. lobiye dönünce) güncelle
+  }, [gameState]); // Oyun durumu her değiştiğinde güncelle
 
   // Initialize Google OAuth Client
   useEffect(() => {
@@ -308,7 +306,6 @@ const App = () => {
   }, [timeLeft, gameState]);
 
   const handleSessionOver = async () => {
-    // Önce oyunu durdur
     setGameState(GameState.SESSION_OVER);
     
     if (user) {
