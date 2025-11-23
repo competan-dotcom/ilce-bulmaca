@@ -108,28 +108,31 @@ const ModernBackground = () => (
   </div>
 );
 
-// GÜNCELLENMİŞ FOOTER: Sola yaslı 'Ana Sayfa', Sağa yaslı İmza, Siyah Renk.
+// MODERN FOOTER: Ortalanmış, Fonksiyonel ve Şık
 const Footer = ({ onClick }: { onClick?: () => void }) => (
-  <div className="w-full max-w-lg mx-auto mt-8 py-4 flex justify-between items-center relative z-50 text-black text-xs font-bold tracking-widest uppercase select-none px-4">
-    {/* Sol Taraf: Ana Sayfa Butonu (Tıklanabilirse göster) */}
-    <div>
-      {onClick ? (
-        <button 
-          onClick={onClick} 
-          className="hover:opacity-60 transition-opacity flex items-center gap-1"
-        >
-          <span>←</span> ANA SAYFA
-        </button>
-      ) : (
-        /* Tıklama yoksa boşluk bırak ki hizalama bozulmasın */
-        <span className="opacity-0">.</span>
-      )}
-    </div>
+  <div className="w-full py-6 flex justify-center items-center gap-6 relative z-50 mt-auto select-none">
+    
+    {/* Sol Taraf: Ana Sayfa Butonu (Varsa gösterilir) */}
+    {onClick && (
+      <button 
+        onClick={onClick} 
+        className="text-gray-500 hover:text-red-600 transition-colors text-xs font-bold tracking-widest uppercase flex items-center gap-2"
+      >
+        <span>←</span> ANA SAYFA
+      </button>
+    )}
 
-    {/* Sağ Taraf: İmza */}
-    <div>
+    {/* Ortada Ayırıcı Çizgi (Sadece buton varsa görünür) */}
+    {onClick && <div className="w-px h-3 bg-gray-300"></div>}
+
+    {/* Sağ Taraf: İmza (Marka Fontuyla) */}
+    <div 
+      className="text-gray-400 text-xs tracking-widest" 
+      style={{ fontFamily: "'Righteous', cursive" }}
+    >
       Z_BILGIN 2025
     </div>
+
   </div>
 );
 
@@ -256,9 +259,8 @@ const App = () => {
     fetchScores();
   }, [gameState]); // Oyun durumu her değiştiğinde güncelle
 
-  
-  
-  
+
+
 // Initialize Google OAuth Client (Beklemeli Versiyon)
   useEffect(() => {
     const initializeGoogle = () => {
@@ -309,7 +311,10 @@ const App = () => {
 
 
 
-  
+
+
+
+
 
   // Timer Logic
   useEffect(() => {
