@@ -5,11 +5,11 @@ import {
   Question, 
   GameState, 
   User, 
-  // UserStats, 
-  // GameResult, 
   HighScore 
 } from './types';
-import { APP_TITLE, DISTRICT_DATABASE, MAX_SCORE_KEY, GOOGLE_CLIENT_ID } from './constants';
+import { APP_TITLE, DISTRICT_DATABASE, GOOGLE_CLIENT_ID } from './constants';
+// Firebase servislerini import ediyoruz
+import { getOrCreateUser, updateUserStats, getHighScores } from './firebaseService';
 
 // Declare global google object
 declare global {
@@ -98,7 +98,6 @@ const soundManager = {
 
 const ModernBackground = () => (
   <div className="fixed inset-0 z-0 pointer-events-none bg-[#f8fafc] overflow-hidden">
-    {/* Architectural Grid */}
     <div 
       className="absolute inset-0 opacity-[0.05]"
       style={{
@@ -112,8 +111,6 @@ const ModernBackground = () => (
         backgroundSize: '40px 40px'
       }}
     ></div>
-
-    {/* Soft Ambient Glows - Corner placements */}
     <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-blue-400 opacity-[0.08] blur-[100px]"></div>
     <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-indigo-400 opacity-[0.08] blur-[100px]"></div>
   </div>
@@ -128,7 +125,6 @@ const Footer = ({ onClick }: { onClick?: () => void }) => (
   </div>
 );
 
-// Dynamic Jagged Landmass Generator
 const generateJaggedPath = (seed: number) => {
     const random = (x: number) => {
         const n = Math.sin(seed + x) * 10000;
@@ -136,7 +132,7 @@ const generateJaggedPath = (seed: number) => {
     };
 
     let points = [];
-    const numPoints = 12 + Math.floor(random(0) * 8); // 12-20 points
+    const numPoints = 12 + Math.floor(random(0) * 8);
     const centerX = 100;
     const centerY = 50;
     const radiusX = 80;
@@ -144,7 +140,7 @@ const generateJaggedPath = (seed: number) => {
 
     for (let i = 0; i < numPoints; i++) {
         const angle = (i / numPoints) * Math.PI * 2;
-        const rVar = 0.7 + random(i) * 0.6; // 0.7 - 1.3 variation
+        const rVar = 0.7 + random(i) * 0.6;
         const px = centerX + Math.cos(angle) * radiusX * rVar;
         const py = centerY + Math.sin(angle) * radiusY * rVar;
         points.push(`${px},${py}`);
@@ -158,40 +154,22 @@ const Tabela = ({ district, mapShapeIndex }: { district: string, mapShapeIndex: 
 
   return (
     <div className="relative z-10 w-full max-w-sm mx-auto mb-1">
-      {/* Signboard */}
       <div className="bg-[#0057D9] rounded-lg shadow-xl border-[3px] border-white relative overflow-hidden px-4 min-h-[140px] flex flex-col items-center pt-3 pb-2">
-        
-        {/* Screws */}
-        <div className="absolute top-2 left-2 w-3 h-3 rounded-full bg-gray-200 border border-gray-400 shadow-inner flex items-center justify-center">
-            <div className="w-full h-[1px] bg-gray-400 transform rotate-45"></div>
-        </div>
-        <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-200 border border-gray-400 shadow-inner flex items-center justify-center">
-            <div className="w-full h-[1px] bg-gray-400 transform -rotate-45"></div>
-        </div>
-        <div className="absolute bottom-2 left-2 w-3 h-3 rounded-full bg-gray-200 border border-gray-400 shadow-inner flex items-center justify-center">
-             <div className="w-full h-[1px] bg-gray-400 transform rotate-12"></div>
-        </div>
-        <div className="absolute bottom-2 right-2 w-3 h-3 rounded-full bg-gray-200 border border-gray-400 shadow-inner flex items-center justify-center">
-             <div className="w-full h-[1px] bg-gray-400 transform -rotate-12"></div>
-        </div>
+        <div className="absolute top-2 left-2 w-3 h-3 rounded-full bg-gray-200 border border-gray-400 shadow-inner flex items-center justify-center"><div className="w-full h-[1px] bg-gray-400 transform rotate-45"></div></div>
+        <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-200 border border-gray-400 shadow-inner flex items-center justify-center"><div className="w-full h-[1px] bg-gray-400 transform -rotate-45"></div></div>
+        <div className="absolute bottom-2 left-2 w-3 h-3 rounded-full bg-gray-200 border border-gray-400 shadow-inner flex items-center justify-center"><div className="w-full h-[1px] bg-gray-400 transform rotate-12"></div></div>
+        <div className="absolute bottom-2 right-2 w-3 h-3 rounded-full bg-gray-200 border border-gray-400 shadow-inner flex items-center justify-center"><div className="w-full h-[1px] bg-gray-400 transform -rotate-12"></div></div>
 
-        {/* Text */}
         <h2 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-md text-center leading-tight z-20">
           {district}
         </h2>
-        
-        {/* Divider Line */}
         <div className="w-3/4 h-1 bg-white mt-1 mb-1 rounded-full shadow-sm z-20"></div>
-
-        {/* Abstract Map Shape */}
         <div className="flex items-center justify-center opacity-20 z-0 pointer-events-none mt-1">
              <svg width="140" height="50" viewBox="0 0 200 100">
                 <path d={pathData} fill="white" stroke="none" />
              </svg>
         </div>
       </div>
-
-      {/* Pole */}
       <div className="w-4 h-12 bg-gray-400 mx-auto -mt-1 relative z-0 shadow-inner rounded-b-full"></div>
       <div className="w-24 h-4 bg-black/10 mx-auto rounded-[100%] blur-sm -mt-2"></div>
     </div>
@@ -202,19 +180,20 @@ const HighScoreList = ({ scores, currentScore }: { scores: HighScore[], currentS
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 w-full max-w-sm mx-auto">
       <h3 className="text-sm font-bold text-gray-500 tracking-wider mb-3 text-center border-b border-gray-100 pb-2">
-        Puan Durumu
+        LİDERLİK TABLOSU (TOP 10)
       </h3>
       {scores.length === 0 ? (
         <div className="text-center text-gray-400 text-sm py-4 italic">
-          Henüz kayıtlı skor yok. İlk sen ol!
+          Henüz şampiyon yok. İlk sen ol!
         </div>
       ) : (
         <div className="space-y-2">
-          {scores.slice(0, 5).map((score, index) => (
+          {scores.map((score, index) => (
             <div 
               key={index} 
               className={`flex items-center justify-between p-2 rounded-lg text-sm ${
-                currentScore === score.score ? 'bg-blue-50 border border-blue-100' : 'bg-gray-50'
+                // İsim kontrolü ile highlight yapalım
+                false ? 'bg-blue-50 border border-blue-100' : 'bg-gray-50'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -249,7 +228,7 @@ const App = () => {
   const [question, setQuestion] = useState<Question | null>(null);
   const [timeLeft, setTimeLeft] = useState(60);
   const [score, setScore] = useState(0);
-  const scoreRef = useRef(0); // FIX: Use ref for sync score access
+  const scoreRef = useRef(0); 
   const [highScores, setHighScores] = useState<HighScore[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [correctAnswer, setCorrectAnswer] = useState<string | null>(null);
@@ -257,13 +236,18 @@ const App = () => {
   const [tokenClient, setTokenClient] = useState<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Load High Scores
+  // --- YENİ: Firebase'den Liderlik Tablosunu Çek ---
   useEffect(() => {
-    const stored = localStorage.getItem(MAX_SCORE_KEY);
-    if (stored) {
-      setHighScores(JSON.parse(stored));
-    }
-  }, []);
+    const fetchScores = async () => {
+        try {
+            const scores = await getHighScores();
+            setHighScores(scores);
+        } catch (error) {
+            console.error("Skorlar çekilemedi:", error);
+        }
+    };
+    fetchScores();
+  }, [gameState]); // Oyun durumu her değiştiğinde (örn. lobiye dönünce) güncelle
 
   // Initialize Google OAuth Client
   useEffect(() => {
@@ -279,60 +263,15 @@ const App = () => {
                  });
                  const profile = await res.json();
                  
-                 // User is authenticated, load or create stats
-                 const storedUserStr = localStorage.getItem(`ilce_bulmaca_user_${profile.email}`);
-                 
-                 const defaultStats = {
-                    totalGames: 0,
-                    totalScore: 0,
-                    cumulativeScore: 0,
-                    dailyScore: 0,
-                    dailyGamesPlayed: 0,
-                    lastPlayedDate: new Date().toISOString().split('T')[0],
-                    maxScore: 0,
-                    totalCorrect: 0,
-                    totalWrong: 0,
-                    bestStreak: 0
-                 };
-
-                 let appUser: User;
-
-                 if (storedUserStr) {
-                    const parsed = JSON.parse(storedUserStr);
-                    // Reset logic happens in useEffect below, but handle it here for safety too
-                    const today = new Date().toISOString().split('T')[0];
-                    let currentStats = { ...defaultStats, ...parsed.stats };
-
-                    if (currentStats.lastPlayedDate !== today) {
-                       currentStats.dailyGamesPlayed = 0;
-                       currentStats.dailyScore = 0;
-                       currentStats.lastPlayedDate = today;
-                    }
-
-                    appUser = {
-                        ...parsed,
-                        name: profile.given_name || profile.name,
-                        email: profile.email,
-                        stats: currentStats
-                    };
-                    // Save reset immediately
-                    localStorage.setItem(`ilce_bulmaca_user_${profile.email}`, JSON.stringify(appUser));
-                 } else {
-                    appUser = {
-                        email: profile.email,
-                        name: profile.given_name || profile.name,
-                        isAdmin: false,
-                        playHistory: [],
-                        gameHistory: [],
-                        stats: defaultStats
-                    };
-                 }
+                 // --- YENİ: Firebase'den Kullanıcıyı Getir/Oluştur ---
+                 const appUser = await getOrCreateUser(profile.email, profile.name || "İsimsiz Oyuncu");
                  
                  setUser(appUser);
                  setGameState(GameState.LOBBY);
 
              } catch (error) {
-                 console.error("Failed to fetch user profile", error);
+                 console.error("Giriş hatası:", error);
+                 alert("Giriş yapılırken bir hata oluştu.");
              }
           }
         },
@@ -350,8 +289,6 @@ const App = () => {
              soundManager.playTick();
           }
           if (prev <= 1) {
-            // Don't call handleSessionOver here directly to avoid stale closure issues with user state
-            // Just set to 0, the effect below will trigger
             return 0;
           }
           return prev - 1;
@@ -370,65 +307,42 @@ const App = () => {
       }
   }, [timeLeft, gameState]);
 
-  // Check Daily Reset on load/updates
-  useEffect(() => {
-    if (user) {
-        const today = new Date().toISOString().split('T')[0];
-        if (user.stats.lastPlayedDate !== today) {
-            const updatedUser = {
-                ...user,
-                stats: {
-                    ...user.stats,
-                    dailyGamesPlayed: 0,
-                    dailyScore: 0,
-                    lastPlayedDate: today
-                }
-            };
-            setUser(updatedUser);
-            localStorage.setItem(`ilce_bulmaca_user_${user.email}`, JSON.stringify(updatedUser));
-        }
-    }
-  }, [gameState]);
-
-  const handleSessionOver = () => {
+  const handleSessionOver = async () => {
+    // Önce oyunu durdur
     setGameState(GameState.SESSION_OVER);
+    
     if (user) {
-      // FIX: Use ref value for calculation to ensure it's current
-      const finalSessionScore = scoreRef.current; 
-      
-      const today = new Date().toISOString().split('T')[0];
-      const currentDaily = user.stats.dailyScore || 0;
-      const currentCumulative = user.stats.cumulativeScore || 0;
-      
-      const newDailyScore = currentDaily + finalSessionScore;
-      const newCumulativeScore = currentCumulative + finalSessionScore;
-      
-      const updatedUser = {
-        ...user,
-        stats: {
-          ...user.stats,
-          dailyScore: newDailyScore,
-          cumulativeScore: newCumulativeScore,
-          dailyGamesPlayed: (user.stats.dailyGamesPlayed || 0) + 1,
-          lastPlayedDate: today
+        const finalSessionScore = scoreRef.current; 
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Yeni verileri hazırla
+        const newDailyScore = (user.stats.dailyScore || 0) + finalSessionScore;
+        const newCumulativeScore = (user.stats.cumulativeScore || 0) + finalSessionScore;
+        const newGamesPlayed = (user.stats.dailyGamesPlayed || 0) + 1;
+
+        const updatedUser = {
+            ...user,
+            stats: {
+                ...user.stats,
+                dailyScore: newDailyScore,
+                cumulativeScore: newCumulativeScore,
+                dailyGamesPlayed: newGamesPlayed,
+                lastPlayedDate: today
+            }
+        };
+
+        // State'i güncelle (Anlık görüntü için)
+        setUser(updatedUser);
+
+        // --- YENİ: Firebase'e Kaydet ---
+        try {
+            await updateUserStats(updatedUser);
+            // Kayıttan sonra skorları yenile
+            const scores = await getHighScores();
+            setHighScores(scores);
+        } catch (error) {
+            console.error("Puan kaydedilemedi:", error);
         }
-      };
-      setUser(updatedUser);
-      localStorage.setItem(`ilce_bulmaca_user_${user.email}`, JSON.stringify(updatedUser));
-
-      const newEntry: HighScore = {
-        score: newCumulativeScore, 
-        date: Date.now(),
-        name: user.name,
-        correct: 0 
-      };
-
-      setHighScores(prev => {
-        const filtered = prev.filter(p => p.name !== user.name);
-        const newScores = [...filtered, newEntry].sort((a, b) => b.score - a.score).slice(0, 10);
-        localStorage.setItem(MAX_SCORE_KEY, JSON.stringify(newScores));
-        return newScores;
-      });
     }
   };
 
@@ -457,11 +371,10 @@ const App = () => {
 
   const handleStartGame = () => {
     if (!user) return;
-    // Check credit based on latest user state
     if ((user.stats.dailyGamesPlayed || 0) >= 2) return;
 
     setScore(0);
-    scoreRef.current = 0; // Reset ref
+    scoreRef.current = 0; 
     setTimeLeft(60);
     setTotalAttempts(0);
     generateQuestion();
@@ -477,7 +390,6 @@ const App = () => {
 
     if (question && answer === question.province) {
       soundManager.playCorrect();
-      // Update both state and ref
       setScore(s => s + 100);
       scoreRef.current += 100; 
 
@@ -702,10 +614,6 @@ const App = () => {
   }
 
   if (gameState === GameState.SESSION_OVER) {
-    // Calculate display score from ref or state, ensuring it's current
-    // Since we're in SESSION_OVER, score state should be updated, but let's use the ref for safety in calculation logic if needed, 
-    // though for display `score` state is usually fine as the render happens after state update.
-    
     let message = "Canın Sağolsun";
     let icon = "👏";
     if (score > 1500) { message = "Efsane!"; icon = "🏆"; }
