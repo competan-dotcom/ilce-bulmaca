@@ -343,8 +343,10 @@ const App = () => {
       }
   }, [timeLeft, gameState]);
 
+
+
+// GÜNCELLENMİŞ: Sadece puanı kaydeder (Oyun sayısı girişte artırılmıştı)
   const handleSessionOver = async () => {
-    // Önce oyunu durdur
     setGameState(GameState.SESSION_OVER);
     
     if (user) {
@@ -354,7 +356,9 @@ const App = () => {
         // Yeni verileri hazırla
         const newDailyScore = (user.stats.dailyScore || 0) + finalSessionScore;
         const newCumulativeScore = (user.stats.cumulativeScore || 0) + finalSessionScore;
-        const newGamesPlayed = (user.stats.dailyGamesPlayed || 0) + 1;
+        
+        // DİKKAT: newGamesPlayed hesaplamasını kaldırdık çünkü girişte artırmıştık.
+        // Mevcut user state'indeki dailyGamesPlayed zaten güncel.
 
         const updatedUser = {
             ...user,
@@ -362,18 +366,15 @@ const App = () => {
                 ...user.stats,
                 dailyScore: newDailyScore,
                 cumulativeScore: newCumulativeScore,
-                dailyGamesPlayed: newGamesPlayed,
+                // dailyGamesPlayed'i değiştirmiyoruz, olduğu gibi kalıyor
                 lastPlayedDate: today
             }
         };
 
-        // State'i güncelle (Anlık görüntü için)
         setUser(updatedUser);
 
-        // --- YENİ: Firebase'e Kaydet ---
         try {
             await updateUserStats(updatedUser);
-            // Kayıttan sonra skorları yenile
             const scores = await getHighScores();
             setHighScores(scores);
         } catch (error) {
@@ -381,6 +382,14 @@ const App = () => {
         }
     }
   };
+
+
+
+
+
+
+
+
 
   const generateQuestion = () => {
     const randomIdx = Math.floor(Math.random() * DISTRICT_DATABASE.length);
@@ -405,10 +414,29 @@ const App = () => {
     setCorrectAnswer(null);
   };
 
-  const handleStartGame = () => {
+// GÜNCELLENMİŞ: Oyuna başlarken hakkı hemen düşer.
+  const handleStartGame = async () => {
     if (!user) return;
     if ((user.stats.dailyGamesPlayed || 0) >= 2) return;
 
+    // 1. Önce kullanıcının hakkını düşürelim (Local State)
+    const updatedUser = {
+      ...user,
+      stats: {
+        ...user.stats,
+        dailyGamesPlayed: (user.stats.dailyGamesPlayed || 0) + 1
+      }
+    };
+    setUser(updatedUser);
+
+    // 2. Firebase'e bu değişikliği hemen yazalım (Kaçakları önlemek için)
+    try {
+      updateUserStats(updatedUser).catch(err => console.error("Hak düşülemedi:", err));
+    } catch (error) {
+      console.error("Firebase hatası:", error);
+    }
+
+    // 3. Oyunu başlatalım
     setScore(0);
     scoreRef.current = 0; 
     setTimeLeft(60);
