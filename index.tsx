@@ -9,7 +9,7 @@ import {
 } from './types';
 import { APP_TITLE, DISTRICT_DATABASE, MAX_SCORE_KEY, GOOGLE_CLIENT_ID } from './constants';
 // Firebase servislerini import ediyoruz
-import { getOrCreateUser, updateUserStats, getHighScores } from './firebaseService';
+import { getOrCreateUser, updateUserStats, getHighScores, getTotalUserCount } from './firebaseService';
 
 // Declare global google object
 declare global {
@@ -187,33 +187,32 @@ const Tabela = ({ district, mapShapeIndex }: { district: string, mapShapeIndex: 
   );
 };
 
-const HighScoreList = ({ scores, currentScore }: { scores: HighScore[], currentScore?: number }) => {
+
+
+const HighScoreList = ({ scores, currentScore, totalPlayers }: { scores: HighScore[], currentScore?: number, totalPlayers?: number }) => {
   
-  // İsim Formatlama Fonksiyonu (Yakup İnan -> YAKUP İ.)
+  // İsim Formatlama Fonksiyonu
   const formatName = (fullName: string) => {
     if (!fullName) return "İsimsiz";
-    
-    // Boşluklara göre ayır
     const parts = fullName.trim().split(/\s+/);
-    
-    // Eğer sadece tek isim varsa hepsini büyüt (Örn: "Ali")
-    if (parts.length === 1) {
-      return parts[0].toLocaleUpperCase('tr-TR');
-    }
-
-    // Son parçayı soyadı kabul et, diğerlerini isim
+    if (parts.length === 1) return parts[0].toLocaleUpperCase('tr-TR');
     const lastName = parts.pop(); 
     const firstName = parts.join(' ');
-
-    // İsim FULL BÜYÜK + Soyisim Baş Harf + Nokta
     return `${firstName.toLocaleUpperCase('tr-TR')} ${lastName?.charAt(0).toLocaleUpperCase('tr-TR')}.`;
   };
 
+  // Backend'den sayı gelene kadar listedeki kişi sayısını göster
+  const displayCount = totalPlayers || scores.length;
+
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 w-full max-w-sm mx-auto">
-      <h3 className="text-sm font-bold text-gray-500 tracking-wider mb-3 text-center border-b border-gray-100 pb-2">
-        LİDERLİK TABLOSU (TOP 10)
+      <h3 className="text-xs font-bold text-gray-500 tracking-tight mb-3 text-center border-b border-gray-100 pb-2 flex justify-center items-center gap-1 whitespace-nowrap">
+        <span className="uppercase">PUAN DURUMU (İLK 10)</span>
+        <span className="text-gray-400 font-normal normal-case text-[10px]">
+          (Toplam Oyuncu Sayısı: {displayCount})
+        </span>
       </h3>
+      
       {scores.length === 0 ? (
         <div className="text-center text-gray-400 text-sm py-4 italic">
           Henüz şampiyon yok. İlk sen ol!
@@ -221,12 +220,7 @@ const HighScoreList = ({ scores, currentScore }: { scores: HighScore[], currentS
       ) : (
         <div className="space-y-2">
           {scores.map((score, index) => (
-            <div 
-              key={index} 
-              className={`flex items-center justify-between p-2 rounded-lg text-sm ${
-                false ? 'bg-blue-50 border border-blue-100' : 'bg-gray-50'
-              }`}
-            >
+            <div key={index} className="flex items-center justify-between p-2 rounded-lg text-sm bg-gray-50">
               <div className="flex items-center gap-3">
                 <span className={`
                   w-6 h-6 flex items-center justify-center rounded-full font-bold text-xs
@@ -236,7 +230,6 @@ const HighScoreList = ({ scores, currentScore }: { scores: HighScore[], currentS
                 `}>
                   {index + 1}
                 </span>
-                {/* Formatlanmış İsim Burada Çağırılıyor */}
                 <span className="font-semibold text-gray-700 truncate max-w-[140px]">
                   {formatName(score.name)}
                 </span>
@@ -259,6 +252,7 @@ const HighScoreList = ({ scores, currentScore }: { scores: HighScore[], currentS
 
 const App = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.START);
+  const [totalUserCount, setTotalUserCount] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -271,18 +265,25 @@ const App = () => {
   const [tokenClient, setTokenClient] = useState<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // --- YENİ: Firebase'den Liderlik Tablosunu Çek ---
+// --- YENİ: Firebase'den Liderlik Tablosunu ve Sayıyı Çek ---
   useEffect(() => {
     const fetchScores = async () => {
         try {
             const scores = await getHighScores();
             setHighScores(scores);
+            
+            // Toplam sayıyı çek
+            const count = await getTotalUserCount();
+            setTotalUserCount(count);
         } catch (error) {
             console.error("Skorlar çekilemedi:", error);
         }
     };
     fetchScores();
-  }, [gameState]); // Oyun durumu her değiştiğinde güncelle
+  }, [gameState]);
+
+
+
 
 
 
@@ -610,7 +611,11 @@ const App = () => {
             )}
           </button>
           
-          <HighScoreList scores={highScores} currentScore={user?.stats.cumulativeScore} />
+          <HighScoreList 
+    scores={highScores} 
+    currentScore={user?.stats.cumulativeScore} 
+    totalPlayers={totalUserCount} 
+/>
         </div>
         <Footer onClick={handleLogout} />
       </div>
