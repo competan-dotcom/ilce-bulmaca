@@ -206,9 +206,10 @@ const HighScoreList = ({ scores, currentScore, totalPlayers }: { scores: HighSco
 
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 w-full max-w-sm mx-auto">
-      <h3 className="text-xs font-bold text-gray-500 tracking-tight mb-3 text-center border-b border-gray-100 pb-2 flex justify-center items-center gap-1 whitespace-nowrap">
+{/* GÜNCELLENDİ: Fontlar büyütüldü (text-sm ve text-xs) */}
+      <h3 className="text-sm font-bold text-gray-500 tracking-tight mb-3 text-center border-b border-gray-100 pb-2 flex justify-center items-center gap-2 whitespace-nowrap">
         <span className="uppercase">PUAN DURUMU (İLK 10)</span>
-        <span className="text-gray-400 font-normal normal-case text-[10px]">
+        <span className="text-gray-400 font-normal normal-case text-xs">
           (Toplam Oyuncu Sayısı: {displayCount})
         </span>
       </h3>
