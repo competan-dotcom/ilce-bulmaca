@@ -188,6 +188,27 @@ const Tabela = ({ district, mapShapeIndex }: { district: string, mapShapeIndex: 
 };
 
 const HighScoreList = ({ scores, currentScore }: { scores: HighScore[], currentScore?: number }) => {
+  
+  // İsim Formatlama Fonksiyonu (Yakup İnan -> YAKUP İ.)
+  const formatName = (fullName: string) => {
+    if (!fullName) return "İsimsiz";
+    
+    // Boşluklara göre ayır
+    const parts = fullName.trim().split(/\s+/);
+    
+    // Eğer sadece tek isim varsa hepsini büyüt (Örn: "Ali")
+    if (parts.length === 1) {
+      return parts[0].toLocaleUpperCase('tr-TR');
+    }
+
+    // Son parçayı soyadı kabul et, diğerlerini isim
+    const lastName = parts.pop(); 
+    const firstName = parts.join(' ');
+
+    // İsim FULL BÜYÜK + Soyisim Baş Harf + Nokta
+    return `${firstName.toLocaleUpperCase('tr-TR')} ${lastName?.charAt(0).toLocaleUpperCase('tr-TR')}.`;
+  };
+
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 w-full max-w-sm mx-auto">
       <h3 className="text-sm font-bold text-gray-500 tracking-wider mb-3 text-center border-b border-gray-100 pb-2">
@@ -215,8 +236,9 @@ const HighScoreList = ({ scores, currentScore }: { scores: HighScore[], currentS
                 `}>
                   {index + 1}
                 </span>
-                <span className="font-semibold text-gray-700 truncate max-w-[120px]">
-                  {score.name}
+                {/* Formatlanmış İsim Burada Çağırılıyor */}
+                <span className="font-semibold text-gray-700 truncate max-w-[140px]">
+                  {formatName(score.name)}
                 </span>
               </div>
               <div className="font-mono font-bold text-blue-600">
@@ -229,6 +251,9 @@ const HighScoreList = ({ scores, currentScore }: { scores: HighScore[], currentS
     </div>
   );
 };
+
+
+
 
 // --- Main App Logic ---
 
