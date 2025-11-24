@@ -1,7 +1,9 @@
 // firebaseService.ts
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+// Bak buraya 'getCountFromServer' eklendi:
+import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, collection, query, orderBy, limit, getDocs, getCountFromServer } from "firebase/firestore";
 import { User, HighScore } from './types';
+
 
 // Config artık ortam değişkenlerinden geliyor:
 const firebaseConfig = {
@@ -94,4 +96,12 @@ export const getHighScores = async (): Promise<HighScore[]> => {
   });
   
   return scores;
+};
+
+
+// Toplam Oyuncu Sayısını Getir
+export const getTotalUserCount = async (): Promise<number> => {
+  const usersRef = collection(db, "users");
+  const snapshot = await getCountFromServer(usersRef);
+  return snapshot.data().count;
 };
