@@ -189,9 +189,11 @@ const Tabela = ({ district, mapShapeIndex }: { district: string, mapShapeIndex: 
 
 
 
+
+
 const HighScoreList = ({ scores, currentScore, totalPlayers }: { scores: HighScore[], currentScore?: number, totalPlayers?: number }) => {
   
-  // İsim Formatlama Fonksiyonu
+  // İsim Formatlama
   const formatName = (fullName: string) => {
     if (!fullName) return "İsimsiz";
     const parts = fullName.trim().split(/\s+/);
@@ -201,11 +203,17 @@ const HighScoreList = ({ scores, currentScore, totalPlayers }: { scores: HighSco
     return `${firstName.toLocaleUpperCase('tr-TR')} ${lastName?.charAt(0).toLocaleUpperCase('tr-TR')}.`;
   };
 
+  // Skor Formatlama (3500 -> 3.500)
+  const formatScore = (score: number) => {
+    return score.toLocaleString('tr-TR');
+  };
+
   const displayCount = totalPlayers || scores.length;
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 w-full max-w-sm mx-auto flex flex-col max-h-[60vh]">
-      {/* BAŞLIK GÜNCELLENDİ: İLK 20 YAPILDI */}
+    // GÜNCELLENDİ: max-h-[60vh] yerine max-h-[85vh] yaptık. Artık liste çok daha uzun!
+    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 w-full max-w-sm mx-auto flex flex-col max-h-[85vh]">
+      
       <h3 className="text-sm font-bold text-gray-500 tracking-tight mb-3 text-center border-b border-gray-100 pb-2 flex justify-center items-center gap-2 whitespace-nowrap flex-shrink-0">
         <span className="uppercase">PUAN DURUMU (İLK 20)</span>
         <span className="text-gray-400 font-normal normal-case text-xs">
@@ -213,7 +221,6 @@ const HighScoreList = ({ scores, currentScore, totalPlayers }: { scores: HighSco
         </span>
       </h3>
       
-      {/* LİSTE İÇERİĞİ: Scroll (Kaydırma) özelliği eklendi */}
       <div className="overflow-y-auto pr-1 space-y-2 custom-scrollbar">
         {scores.length === 0 ? (
           <div className="text-center text-gray-400 text-sm py-4 italic">
@@ -235,8 +242,9 @@ const HighScoreList = ({ scores, currentScore, totalPlayers }: { scores: HighSco
                   {formatName(score.name)}
                 </span>
               </div>
+              {/* GÜNCELLENDİ: Puan formatlama fonksiyonu eklendi */}
               <div className="font-mono font-bold text-blue-600">
-                {score.score}
+                {formatScore(score.score)}
               </div>
             </div>
           ))
@@ -245,6 +253,10 @@ const HighScoreList = ({ scores, currentScore, totalPlayers }: { scores: HighSco
     </div>
   );
 };
+
+
+
+
 
 
 
