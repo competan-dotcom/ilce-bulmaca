@@ -201,30 +201,30 @@ const HighScoreList = ({ scores, currentScore, totalPlayers }: { scores: HighSco
     return `${firstName.toLocaleUpperCase('tr-TR')} ${lastName?.charAt(0).toLocaleUpperCase('tr-TR')}.`;
   };
 
-  // Backend'den sayı gelene kadar listedeki kişi sayısını göster
   const displayCount = totalPlayers || scores.length;
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 w-full max-w-sm mx-auto">
-{/* GÜNCELLENDİ: Fontlar büyütüldü (text-sm ve text-xs) */}
-      <h3 className="text-sm font-bold text-gray-500 tracking-tight mb-3 text-center border-b border-gray-100 pb-2 flex justify-center items-center gap-2 whitespace-nowrap">
-        <span className="uppercase">PUAN DURUMU (İLK 10)</span>
+    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 w-full max-w-sm mx-auto flex flex-col max-h-[60vh]">
+      {/* BAŞLIK GÜNCELLENDİ: İLK 20 YAPILDI */}
+      <h3 className="text-sm font-bold text-gray-500 tracking-tight mb-3 text-center border-b border-gray-100 pb-2 flex justify-center items-center gap-2 whitespace-nowrap flex-shrink-0">
+        <span className="uppercase">PUAN DURUMU (İLK 20)</span>
         <span className="text-gray-400 font-normal normal-case text-xs">
-          (Toplam Oyuncu Sayısı: {displayCount})
+          (Toplam: {displayCount})
         </span>
       </h3>
       
-      {scores.length === 0 ? (
-        <div className="text-center text-gray-400 text-sm py-4 italic">
-          Henüz şampiyon yok. İlk sen ol!
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {scores.map((score, index) => (
-            <div key={index} className="flex items-center justify-between p-2 rounded-lg text-sm bg-gray-50">
+      {/* LİSTE İÇERİĞİ: Scroll (Kaydırma) özelliği eklendi */}
+      <div className="overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+        {scores.length === 0 ? (
+          <div className="text-center text-gray-400 text-sm py-4 italic">
+            Henüz şampiyon yok. İlk sen ol!
+          </div>
+        ) : (
+          scores.map((score, index) => (
+            <div key={index} className="flex items-center justify-between p-2 rounded-lg text-sm bg-gray-50 mr-1">
               <div className="flex items-center gap-3">
                 <span className={`
-                  w-6 h-6 flex items-center justify-center rounded-full font-bold text-xs
+                  w-6 h-6 flex items-center justify-center rounded-full font-bold text-xs flex-shrink-0
                   ${index === 0 ? 'bg-yellow-100 text-yellow-700' : 
                     index === 1 ? 'bg-gray-200 text-gray-700' : 
                     index === 2 ? 'bg-orange-100 text-orange-800' : 'bg-white text-gray-500 border border-gray-200'}
@@ -239,9 +239,9 @@ const HighScoreList = ({ scores, currentScore, totalPlayers }: { scores: HighSco
                 {score.score}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 };
