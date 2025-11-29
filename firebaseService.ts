@@ -77,7 +77,7 @@ export const updateUserStats = async (user: User) => {
 export const getHighScores = async (): Promise<HighScore[]> => {
   const usersRef = collection(db, "users");
   // Kümülatif skora göre azalan sırala, ilk 10'u al
-  const q = query(usersRef, orderBy("stats.cumulativeScore", "desc"), limit(10));
+  const q = query(usersRef, orderBy("stats.cumulativeScore", "desc"), limit(20));
   
   const querySnapshot = await getDocs(q);
   const scores: HighScore[] = [];
